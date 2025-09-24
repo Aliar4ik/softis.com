@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Softis — SPA</title>
+  <meta name="description" content="Softis — помічник у створенні YouTube-контенту. Озвучка, генерація зображень, субтитри, оновлення." />
+  <link rel="icon" href="./logo_32.png" sizes="32x32" type="image/png">
+  <link rel="shortcut icon" href="./logo_32.png" type="image/png">
+  <style>
+    :root{--bg:#0a0a10;--surface:#101017;--card:#12121b;--text:#e7e8ee;--muted:#b9bac6;--border:#232332;--primary:#dc2626;--accent:#ef4444;}
+    html,body{height:100%}body{margin:0;background:radial-gradient(1200px 800px at 70% -10%, rgba(239,68,68,.08), transparent 60%),var(--bg);color:var(--text);font:400 16px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+    .container{width:min(1140px,100% - 32px);margin:0 auto}
+    .topbar{position:sticky;top:0;z-index:50;backdrop-filter:saturate(120%) blur(8px);background:color-mix(in srgb,var(--bg) 70%, black 30% / 70%);border-bottom:1px solid var(--border)}
+    .topbar-inner{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:10px 0}
+    .brand{display:inline-flex;align-items:center;gap:10px;font-weight:800}
+    .brand-icon{width:32px;height:32px;display:grid;place-items:center;background:#0b0d14;border-radius:10px;border:1px solid color-mix(in srgb,var(--primary) 60%, var(--border));box-shadow:0 0 18px rgba(220,38,38,.35),0 0 0 1px color-mix(in srgb,var(--primary) 45%, transparent) inset;overflow:visible}
+    .brand-img{width:24px;height:24px;display:block;object-fit:contain;image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges}
+    .mainnav{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+    .nav-pill,.pill{background:#14141c;color:var(--text);border-radius:999px;padding:8px 16px;cursor:pointer;border:1px solid color-mix(in srgb,var(--primary) 40%, var(--border));box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 35%, transparent) inset,0 0 22px rgba(220,38,38,.28);transition:transform .15s ease, box-shadow .2s ease, background .2s ease;user-select:none;text-decoration:none;display:inline-flex;align-items:center;gap:.5rem}
+    .nav-pill[aria-current="page"], .pill[aria-pressed="true"]{box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 60%, transparent) inset,0 0 32px rgba(220,38,38,.45),0 10px 26px rgba(0,0,0,.35);transform:translateY(-1px)}
+    .hero{position:relative;min-height:72svh;display:grid;align-items:center;overflow:clip;isolation:isolate}
+    .reading-pad{background:linear-gradient(180deg, rgba(0,0,0,.58), rgba(0,0,0,.46));border:1px solid color-mix(in srgb,var(--primary) 22%, var(--border));border-radius:20px;padding:24px 24px 30px;box-shadow:0 18px 48px rgba(0,0,0,.55),0 0 28px color-mix(in srgb,var(--primary) 14%, transparent);max-width:980px}
+    h1{font-size:clamp(30px,5vw,52px);line-height:1.15;margin:8px 0 12px}.lead{color:#c9cad6;max-width:62ch}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+    .btn-primary,.btn-ghost{background:linear-gradient(180deg,#1c0f12,#2a1216);color:#fff;border-radius:12px;padding:12px 18px;font-weight:800;border:1px solid color-mix(in srgb,var(--primary) 58%, var(--border));box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 48%, transparent) inset,0 0 36px color-mix(in srgb,var(--primary) 52%, transparent),0 12px 34px rgba(0,0,0,.6);transition:transform .12s ease, box-shadow .2s ease, background .15s ease;text-decoration:none;display:inline-block}
+    .btn-primary:hover,.btn-ghost:hover{transform:translateY(-1px);box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 68%, transparent) inset,0 0 48px color-mix(in srgb,var(--primary) 65%, transparent),0 18px 42px rgba(0,0,0,.66)}
+    .abs-scene{position:absolute;inset:-6% -6% -10% -6%;z-index:-1;perspective:1100px}
+    .abs{position:absolute;width:150px;height:120px;transform-style:preserve-3d;will-change:transform}.abs svg{width:100%;height:100%}
+    .tri-shape{fill:color-mix(in srgb,var(--accent) 12%, transparent);stroke:#fff;stroke-width:2;stroke-linejoin:round}
+    .glow-stroke{opacity:.45;filter:url(#glow)}
+    .abs.pulse .tri-shape{fill:color-mix(in srgb,var(--accent) 18%, transparent)}.abs.pulse .glow-stroke{opacity:.95;animation:glowPulse 1.25s ease-in-out infinite}
+    @keyframes glowPulse{0%{filter:drop-shadow(0 0 10px rgba(239,68,68,.45)) drop-shadow(0 0 24px rgba(239,68,68,.35));opacity:.55}50%{filter:drop-shadow(0 0 16px rgba(239,68,68,.6)) drop-shadow(0 0 36px rgba(239,68,68,.55));opacity:.98}100%{filter:drop-shadow(0 0 10px rgba(239,68,68,.45)) drop-shadow(0 0 24px rgba(239,68,68,.35));opacity:.55}}
+    main [data-view]{display:none}
+    body[data-view="home"] [data-view="home"],body[data-view="pricing"] [data-view="pricing"],body[data-view="voice"] [data-view="voice"],body[data-view="images"] [data-view="images"],body[data-view="updates"] [data-view="updates"],body[data-view="subs"] [data-view="subs"],body[data-view="contact"] [data-view="contact"]{display:block}
+    section{padding:36px 0 54px}h2{font-size:clamp(22px,3.4vw,34px);margin:8px 0 12px}.muted{color:var(--muted)}
+    footer{margin-top:48px;padding:24px 0 40px;color:var(--muted);border-top:1px solid var(--border)}
+  </style>
+</head>
+<body data-view="home">
+  <header class="topbar" role="banner">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true" title="Softis logo">
+          <img class="brand-img" src="./logo_32.png" alt="Softis logo" width="24" height="24" decoding="async" loading="eager">
+        </span>
+        <span>Softis</span>
+      </div>
+      <nav class="mainnav" aria-label="Навігація">
+        <a class="nav-pill" href="#/" data-route="home">Головна</a>
+        <a class="nav-pill" href="#/pricing" data-route="pricing">Ціни</a>
+        <a class="nav-pill" href="#/voice" data-route="voice">Озвучка</a>
+        <a class="nav-pill" href="#/images" data-route="images">Генерація зображень</a>
+        <a class="nav-pill" href="#/updates" data-route="updates">Оновлення</a>
+        <a class="nav-pill" href="#/subs" data-route="subs">Субтитри</a>
+        <a class="nav-pill" href="#/contact" data-route="contact">Контакти</a>
+      </nav>
+      <div style="display:flex;justify-content:flex-end"><button class="pill" aria-pressed="true" title="Тема">☀️/🌙</button></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" data-view="home">
+      <svg width="0" height="0" style="position:absolute;opacity:0;pointer-events:none">
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b1"/>
+            <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b2"/>
+            <feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/></feMerge>
+          </filter>
+        </defs>
+      </svg>
+      <div class="abs-scene" aria-hidden="true">
+        <svg class="bg-tris" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:-8% -8% -8% -8%;opacity:.22;filter:blur(2px)">
+          <defs><symbol id="bgtri" viewBox="0 0 100 80"><polygon points="12,10 92,40 12,70" fill="rgba(239,68,68,.07)" stroke="#fff" stroke-width="1"/></symbol></defs>
+          <use href="#bgtri" x="40" y="60" width="70" height="56"/><use href="#bgtri" x="220" y="140" width="90" height="72"/><use href="#bgtri" x="420" y="40" width="60" height="48"/><use href="#bgtri" x="680" y="120" width="84" height="67"/><use href="#bgtri" x="920" y="80" width="76" height="61"/><use href="#bgtri" x="160" y="360" width="88" height="70"/><use href="#bgtri" x="520" y="340" width="72" height="57"/><use href="#bgtri" x="840" y="380" width="96" height="76"/>
+        </svg>
+        <div class="abs" data-depth="0.6" style="left:6%; top:12%"><svg viewBox="0 0 100 80"><polygon class="tri-shape" points="12,10 92,40 12,70"/><polygon class="glow-stroke" points="12,10 92,40 12,70" fill="none" stroke="rgba(239,68,68,.55)" stroke-width="3"/></svg></div>
+        <div class="abs" data-depth="0.9" style="left:24%; top:26%; width:130px; height:104px"><svg viewBox="0 0 100 80"><polygon class="tri-shape" points="12,10 92,40 12,70"/><polygon class="glow-stroke" points="12,10 92,40 12,70" fill="none" stroke="rgba(239,68,68,.55)" stroke-width="3"/></svg></div>
+        <div class="abs" data-depth="1.2" style="left:48%; top:14%; width:120px; height:96px"><svg viewBox="0 0 100 80"><polygon class="tri-shape" points="12,10 92,40 12,70"/><polygon class="glow-stroke" points="12,10 92,40 12,70" fill="none" stroke="rgba(239,68,68,.55)" stroke-width="3"/></svg></div>
+        <div class="abs" data-depth="0.7" style="left:70%; top:18%; width:140px; height:110px"><svg viewBox="0 0 100 80"><polygon class="tri-shape" points="12,10 92,40 12,70"/><polygon class="glow-stroke" points="12,10 92,40 12,70" fill="none" stroke="rgba(239,68,68,.55)" stroke-width="3"/></svg></div>
+        <div class="abs" data-depth="1.0" style="left:12%; top:60%; width:170px; height:130px"><svg viewBox="0 0 100 80"><polygon class="tri-shape" points="12,10 92,40 12,70"/><polygon class="glow-stroke" points="12,10 92,40 12,70" fill="none" stroke="rgba(239,68,68,.55)" stroke-width="3"/></svg></div>
+        <div class="abs" data-depth="1.4" style="left:44%; top:64%; width:150px; height:116px"><svg viewBox="0 0 100 80"><polygon class="tri-shape" points="12,10 92,40 12,70"/><polygon class="glow-stroke" points="12,10 92,40 12,70" fill="none" stroke="rgba(239,68,68,.55)" stroke-width="3"/></svg></div>
+        <div class="abs" data-depth="1.6" style="left:75%; top:58%; width:160px; height:124px"><svg viewBox="0 0 100 80"><polygon class="tri-shape" points="12,10 92,40 12,70"/><polygon class="glow-stroke" points="12,10 92,40 12,70" fill="none" stroke="rgba(239,68,68,.55)" stroke-width="3"/></svg></div>
+      </div>
+      <div class="container">
+        <div class="reading-pad">
+          <h1>Ми ваш помічник в створенні контенту для YouTube.</h1>
+          <p class="lead">Це софт, який допомагає вам створювати озвучку, генерувати зображення та створювати субтитри. Рухайте мишкою — трикутники реагують. Наведіть на кнопки — фігури зближуються й яскравіше світяться.</p>
+          <div class="actions">
+            <a class="btn-primary" href="#/pricing">Спробувати безкоштовно</a>
+            <a class="btn-ghost" href="#/images">Дивитися приклади</a>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="container" data-view="pricing"><h2>Ціни</h2><p class="muted">Тут твоя сітка тарифів.</p></section>
+    <section class="container" data-view="voice"><h2>Озвучка</h2><p class="muted">Приклади аудіо…</p></section>
+    <section class="container" data-view="images"><h2>Генерація зображень</h2><p class="muted">Галерея прикладів…</p></section>
+    <section class="container" data-view="updates"><h2>Оновлення</h2><p class="muted">Статті з Supabase (підключиш свій код).</p></section>
+    <section class="container" data-view="subs"><h2>Субтитри</h2><p class="muted">Опис фіч і демо.</p></section>
+    <section class="container" data-view="contact"><h2>Контакти</h2><p class="muted">Форма або контакти.</p></section>
+  </main>
+  <footer><div class="container" style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><span>© 2025 Softis</span><a class="pill" href="#/admin" aria-pressed="false">Admin</a></div></footer>
+  <script>
+    (function(){const img=document.querySelector('.brand-img'); if(img && !img.src.includes('?v=')) img.src=img.getAttribute('src')+'?v='+Date.now();})();
+    const routes=['home','pricing','voice','images','updates','subs','contact']; const navLinks=document.querySelectorAll('.mainnav .nav-pill');
+    function parseRoute(){const h=location.hash.replace(/^#/,''); const seg=h.startsWith('/')?h.slice(1):h; const view=seg.split('/')[0]||'home'; return routes.includes(view)?view:'home'}
+    function render(){const view=parseRoute(); document.body.setAttribute('data-view',view); navLinks.forEach(a=>a.setAttribute('aria-current', a.dataset.route===view?'page':'false')); window.scrollTo({top:0, behavior:'auto'})}
+    addEventListener('hashchange',render); render();
+    const scene=document.querySelector('.abs-scene'), bg=document.querySelector('.bg-tris'), tris=[...document.querySelectorAll('.abs')]; let mouseX=0, mouseY=0, t=0, attract=null;
+    function onMouseMove(e){ if(!scene) return; const r=scene.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height; mouseX=(x-.5)*2; mouseY=(y-.5)*2 }
+    addEventListener('mousemove', onMouseMove, {passive:true});
+    function loop(){ t+=.006; if(bg){ bg.style.transform=`translate3d(${mouseX*-14}px,${mouseY*-10}px,0)` } for(const el of tris){ const d=parseFloat(el.dataset.depth||'1'); const rx=-mouseY*22*d, ry=mouseX*28*d, rz=Math.sin(t*(.6+d))*6, tz=d*80; let ax=0, ay=0; if(attract){ const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2; const dx=attract.x-cx, dy=attract.y-cy, f=Math.min(1,.015*Math.hypot(dx,dy)); ax=dx*f*(.35+d*.25); ay=dy*f*(.35+d*.25) } const pulse=attract?(1+.06*(.5+Math.sin(t*3)*.5)):1; el.style.transform=`translate3d(${ax}px,${ay}px,0) translateZ(${tz}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${pulse})` } requestAnimationFrame(loop) }
+    requestAnimationFrame(loop);
+    document.querySelectorAll('.actions a,.actions button').forEach(btn=>{ btn.addEventListener('mouseenter', ()=>{ const r=btn.getBoundingClientRect(); attract={x:r.left+r.width/2, y:r.top+r.height/2}; tris.forEach(el=>el.classList.add('pulse')) }); btn.addEventListener('mouseleave', ()=>{ attract=null; tris.forEach(el=>el.classList.remove('pulse')) }) });
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches){ removeEventListener('mousemove', onMouseMove); tris.forEach(el=>{el.style.transform='none'}) }
+  </script>
+</body>
+</html>
