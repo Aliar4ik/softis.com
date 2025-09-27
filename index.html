@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Softis — SPA</title>
+  <meta name="description" content="Softis — помічник у створенні YouTube-контенту. Озвучка, генерація зображень, субтитри, оновлення." />
+  <link rel="icon" href="images/logo_32.png" sizes="32x32" type="image/png">
+  <link rel="shortcut icon" href="images/logo_32.png" type="image/png">
+  <style>
+    :root{--bg:#0a0a10;--surface:#101017;--card:#12121b;--text:#e7e8ee;--muted:#b9bac6;--border:#232332;--primary:#dc2626;--accent:#ef4444;}
+    html,body{height:100%}body{margin:0;background:radial-gradient(1200px 800px at 70% -10%, rgba(239,68,68,.08), transparent 60%),var(--bg);color:var(--text);font:400 16px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+    .container{width:min(1140px,100% - 32px);margin:0 auto}
+    .topbar{position:sticky;top:0;z-index:50;backdrop-filter:saturate(120%) blur(8px);background:color-mix(in srgb,var(--bg) 70%, black 30% / 70%);border-bottom:1px solid var(--border)}
+    .topbar-inner{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:10px 0}
+    .brand{display:inline-flex;align-items:center;gap:10px;font-weight:800}
+    .brand-icon{width:32px;height:32px;display:grid;place-items:center;background:#0b0d14;border-radius:10px;border:1px solid color-mix(in srgb,var(--primary) 60%, var(--border));box-shadow:0 0 18px rgba(220,38,38,.35),0 0 0 1px color-mix(in srgb,var(--primary) 45%, transparent) inset;overflow:visible}
+    .brand-img{width:24px;height:24px;display:block;object-fit:contain;image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges}
+    .mainnav{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+    
+    .nav-pill,.pill{
+        background:#14141c;color:var(--text);border-radius:999px;padding:8px 16px;cursor:pointer;
+        border:1px solid color-mix(in srgb,var(--primary) 40%, var(--border));
+        box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 25%, transparent) inset,
+                   0 0 16px rgba(220,38,38,.15);
+        transition:transform .15s ease, box-shadow .2s ease, background .2s ease;
+        user-select:none;text-decoration:none;display:inline-flex;align-items:center;gap:.5rem
+    }
+    .nav-pill:hover, .pill:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0 0 1px color-mix(in srgb,var(--primary) 70%, transparent) inset,
+                    0 0 38px rgba(220,38,38,.65),
+                    0 6px 12px rgba(0,0,0,.4);
+    }
+    .nav-pill[aria-current="page"], .pill[aria-pressed="true"] {
+        transform: translateY(-1px);
+        box-shadow: 0 0 0 1px color-mix(in srgb,var(--primary) 75%, transparent) inset,
+                    0 0 42px rgba(220,38,38,.75),
+                    0 8px 18px rgba(0,0,0,.5);
+        background: color-mix(in srgb, var(--primary) 10%, var(--card));
+    }
+
+    .hero{position:relative;min-height:72svh;display:grid;align-items:center;overflow:clip;isolation:isolate}
+    .reading-pad{background:linear-gradient(180deg, rgba(0,0,0,.58), rgba(0,0,0,.46));border:1px solid color-mix(in srgb,var(--primary) 22%, var(--border));border-radius:20px;padding:24px 24px 30px;box-shadow:0 18px 48px rgba(0,0,0,.55),0 0 28px color-mix(in srgb,var(--primary) 14%, transparent);max-width:980px}
+    h1{font-size:clamp(30px,5vw,52px);line-height:1.15;margin:8px 0 12px}.lead{color:#c9cad6;max-width:62ch}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+    .btn-primary,.btn-ghost{background:linear-gradient(180deg,#1c0f12,#2a1216);color:#fff;border-radius:12px;padding:12px 18px;font-weight:800;border:1px solid color-mix(in srgb,var(--primary) 58%, var(--border));box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 48%, transparent) inset,0 0 36px color-mix(in srgb,var(--primary) 52%, transparent),0 12px 34px rgba(0,0,0,.6);transition:transform .12s ease, box-shadow .2s ease, background .15s ease;text-decoration:none;display:inline-block}
+    .btn-primary:hover,.btn-ghost:hover{transform:translateY(-1px);box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 68%, transparent) inset,0 0 48px color-mix(in srgb,var(--primary) 65%, transparent),0 18px 42px rgba(0,0,0,.66)}
+    .abs-scene{position:absolute;inset:-6% -6% -10% -6%;z-index:-1;perspective:1100px}
+    .abs{position:absolute;width:150px;height:120px;transform-style:preserve-3d;will-change:transform}.abs svg{width:100%;height:100%}
+    .tri-shape{fill:color-mix(in srgb,var(--accent) 12%, transparent);stroke:#fff;stroke-width:2;stroke-linejoin:round}
+    .glow-stroke{opacity:.45;filter:url(#glow)}
+    .abs.pulse .tri-shape{fill:color-mix(in srgb,var(--accent) 18%, transparent)}.abs.pulse .glow-stroke{opacity:.95;animation:glowPulse 1.25s ease-in-out infinite}
+    @keyframes glowPulse{0%{filter:drop-shadow(0 0 10px rgba(239,68,68,.45)) drop-shadow(0 0 24px rgba(239,68,68,.35));opacity:.55}50%{filter:drop-shadow(0 0 16px rgba(239,68,68,.6)) drop-shadow(0 0 36px rgba(239,68,68,.55));opacity:.98}100%{filter:drop-shadow(0 0 10px rgba(239,68,68,.45)) drop-shadow(0 0 24px rgba(239,68,68,.35));opacity:.55}}
+    main [data-view]{display:none}
+    body[data-view="home"] [data-view="home"],body[data-view="pricing"] [data-view="pricing"],body[data-view="soft"] [data-view="soft"],body[data-view="updates"] [data-view="updates"],body[data-view="account"] [data-view="account"]{display:block}
+    section{padding:36px 0 54px}h2{font-size:clamp(22px,3.4vw,34px);margin:8px 0 12px}.muted{color:var(--muted)}
+    footer{margin-top:48px;padding:24px 0 40px;color:var(--muted);border-top:1px solid var(--border)}
+    
+    /* Additional styles for the admin and updates pages */
+    .admin-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 500px;
+      margin: 20px auto;
+    }
+    .admin-card input, .admin-card textarea {
+      width: calc(100% - 24px);
+      padding: 12px;
+      margin-bottom: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+    }
+    .admin-card button {
+      width: 100%;
+      background: linear-gradient(180deg,#1c0f12,#2a1216);
+      color: #fff;
+      border: 1px solid color-mix(in srgb,var(--primary) 58%, var(--border));
+      cursor: pointer;
+      padding: 12px;
+      border-radius: 12px;
+      font-weight: 800;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 38%, transparent) inset, 0 0 28px color-mix(in srgb, var(--primary) 46%, transparent), 0 12px 34px rgba(0,0,0,.5);
+    }
+    /* Стилі для чекбокса "Запам'ятати мене" */
+    .remember-me {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+    .remember-me input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .soft-program {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        transition: transform .15s ease, box-shadow .2s ease;
+    }
+    .soft-program:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px rgba(0,0,0,.5), 0 0 22px rgba(220,38,38,.45);
+    }
+    .soft-program h3 {
+        margin: 0 0 8px 0;
+        color: var(--primary);
+    }
+    
+    .update-post {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .update-post h3 {
+      margin-top: 0;
+    }
+    .update-media {
+        margin: 16px 0;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .update-media img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+    .update-media iframe {
+        width: 100%;
+        aspect-ratio: 16 / 9; 
+        border: none;
+    }
+    .rls-warning {
+        background: #2a1216;
+        padding: 16px;
+        border-radius: 12px;
+        margin-top: 20px;
+        border: 1px solid var(--primary);
+        color: #ffdddd;
+    }
+    /* --- СТИЛІ ДЛЯ МОДАЛЬНОГО ВІКНА --- */
+    #language-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 9999; 
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(4px);
+        display: none; 
+        place-items: center; 
+        padding: 20px;
+    }
+    #language-modal[data-active="true"] {
+        display: grid;
+    }
+    .modal-content {
+        background: var(--card);
+        border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+        border-radius: 16px;
+        padding: 30px;
+        max-width: 400px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(239, 68, 68, 0.2);
+    }
+    .modal-content h3 {
+        margin-top: 0;
+        color: var(--text); 
+    }
+    .modal-actions {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+    .lang-btn {
+        background: linear-gradient(180deg,#1c0f12,#2a1216);
+        color: #fff;
+        border-radius: 10px;
+        padding: 10px 15px;
+        font-weight: 700;
+        border: 1px solid color-mix(in srgb,var(--primary) 58%, var(--border));
+        box-shadow: 0 0 0 1px color-mix(in srgb,var(--primary) 48%, transparent) inset,0 0 36px color-mix(in srgb,var(--primary) 52%, transparent);
+        cursor: pointer;
+        transition: transform .12s ease, box-shadow .2s ease;
+    }
+    .lang-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0 0 1px color-mix(in srgb,var(--primary) 68%, transparent) inset,0 0 48px color-mix(in srgb,var(--primary) 65%, transparent);
+    }
+    /* Стилі для перемикача форми */
+    .form-switcher {
+        margin-top: 15px;
+        text-align: center;
+    }
+    .form-switcher a {
+        color: var(--primary);
+        cursor: pointer;
+        text-decoration: underline;
+        font-weight: 600;
+    }
+  </style>
+</head>
+<body data-view="home">
+  <header class="topbar" role="banner">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true" title="Softis logo">
+          <img class="brand-img" src="images/logo_32.png" alt="Softis logo" width="24" height="24" decoding="async" loading="eager">
+        </span>
+        <span>Softis</span>
+      </div>
+      <nav class="mainnav" aria-label="Навігація">
+        <a class="nav-pill" href="#/" data-route="home" data-i18n="nav_home">Головна</a>
+        <a class="nav-pill" href="#/pricing" data-route="pricing" data-i18n="nav_pricing">Ціни</a>
+        <a class="nav-pill" href="#/soft" data-route="soft" data-i18n="nav_soft">Софт</a>
+        <a class="nav-pill" href="#/updates" data-route="updates" data-i18n="nav_updates">Оновлення</a>
+        <a class="nav-pill" href="#/account" data-route="account" data-i18n="nav_account">Вхід в акаунт</a>
+      </nav>
+      <div style="display:flex;justify-content:flex-end"></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" data-view="home">
+      <svg width="0" height="0" style="position:absolute;opacity:0;pointer-events:none">
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b1"/>
+            <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b2"/>
+            <feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/></feMerge>
+          </filter>
+        </defs>
+      </svg>
+      <div class="abs-scene" aria-hidden="true">
+        <svg class="bg-tris" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:-8% -8% -8% -8%;opacity:.22;filter:blur(2px)">
+          <defs><symbol id="bgtri" viewBox="0 0 100 80"><polygon points="12,10 92,40 12,70" fill="rgba(239,68,68,.07)" stroke="#fff" stroke-width="1"/></symbol></defs>
+          <use href="#bgtri" x="40" y="60" width="70" height="56"/><use href="#bgtri" x="220" y="140" width="90" height="72"/><use href="#bgtri" x="420" y="40" width="60" height="48"/><use href="#bgtri" x="680" y="120" width="84" height="67"/><use href="#bgtri" x="920" y="80" width="76" height="61"/><use href="#bgtri" x="160" y="360" width="88" height="70"/><use href="#bgtri" x="520" y="340" width="72" height="57"/><use href="#bgtri" x="840" y="380" width="96" height="76"/>
+        </svg>
+        <div class="abs" data-depth="0.6" style="left:6%; top:12%"><svg viewBox="0 0 100 80"><polygon class="tri-shape" points="12,10 92,40 12,70"/><polygon class="glow-stroke" points="12,10 92,40 12,70" fill="none" stroke="rgba(239,68,68,.55)" stroke-width="3"/></svg></div>
+        <div class="abs" data-depth="0.9" style="left:24%; top:26%; width:130px; height:104px"><svg viewBox="0 0 100 80"><polygon class="tri-shape" points="12,10 92,40 12,70"/><polygon class="glow-stroke" points="12,10 92,40 12,70" fill="none" stroke="rgba(239,68,68,.55)" stroke-width="3"/></svg></div>
+        <div class="abs" data-depth="1.2" style="left:48%; top:14%; width:120px; height:96px"><svg viewBox="0 0 100 80"><polygon class="tri-shape" points="12,10 92,40 12,70"/><polygon class="glow-stroke" points="12,10 92,40 12,70" fill="none" stroke="rgba(239,68,68,.55)" stroke-width="3"/></svg></div>
+        <div class="abs" data-depth="0.7" style="left:70%; top:18%; width:140px; height:110px"><svg viewBox="0 0 100 80"><polygon class="tri-shape" points="12,10 92,40 12,70"/><polygon class="glow-stroke" points="12,10 92,40 12,70" fill="none" stroke="rgba(239,68,68,.55)" stroke-width="3"/></svg></div>
+        <div class="abs" data-depth="1.0" style="left:12%; top:60%; width:170px; height:130px"><svg viewBox="0 0 100 80"><polygon class="tri-shape" points="12,10 92,40 12,70"/><polygon class="glow-stroke" points="12,10 92,40 12,70" fill="none" stroke="rgba(239,68,68,.55)" stroke-width="3"/></svg></div>
+        <div class="abs" data-depth="1.4" style="left:44%; top:64%; width:150px; height:116px"><svg viewBox="0 0 100 80"><polygon class="tri-shape" points="12,10 92,40 12,70"/><polygon class="glow-stroke" points="12,10 92,40 12,70" fill="none" stroke="rgba(239,68,68,.55)" stroke-width="3"/></svg></div>
+        <div class="abs" data-depth="1.6" style="left:75%; top:58%; width:160px; height:124px"><svg viewBox="0 0 100 80"><polygon class="tri-shape" points="12,10 92,40 12,70"/><polygon class="glow-stroke" points="12,10 92,40 12,70" fill="none" stroke="rgba(239,68,68,.55)" stroke-width="3"/></svg></div>
+      </div>
+      <div class="container">
+        <div class="reading-pad">
+          <h1 data-i18n="hero_title">Ми ваш помічник в створенні контенту для YouTube.</h1>
+          <p class="lead" data-i18n="hero_lead">Це софт, який допомагає вам створювати озвучку, генерувати зображення та створювати субтитри. Рухайте мишкою — трикутники реагують. Лише приємний паралакс і неонове світіння.</p>
+          <div class="actions">
+            <a class="btn-primary" href="#/pricing" data-i18n="btn_try">Спробувати безкоштовно</a>
+            <a class="btn-ghost" href="#/soft" data-i18n="btn_examples">Дивитися приклади</a>
+          </div>
+        </div>
+      </div>
+      
+      <div id="language-modal" aria-modal="true" role="dialog" aria-labelledby="modal-title">
+          <div class="modal-content">
+              <h3 id="modal-title">Оберіть мову / Choose Language</h3>
+              <p class="muted" data-i18n="modal_subtitle">Ваш вибір буде збережено.</p>
+              <div class="modal-actions">
+                  <button class="lang-btn" data-lang="uk">
+                      🇺🇦 Українська
+                  </button>
+                  <button class="lang-btn" data-lang="en">
+                      🇬🇧 English
+                  </button>
+              </div>
+          </div>
+      </div>
+      
+    </section>
+    <section class="container" data-view="pricing">
+      <h2 data-i18n="pricing_title">Ціни та доступ до Софту</h2>
+      <p class="lead" data-i18n="pricing_lead">Для придбання доступу (криптовалютою або іншим способом) та отримання консультації, будь ласка, зв'яжіться з нашим менеджером у Telegram. Доступ до Софту буде активовано вручну після оплати.</p>
+      <div class="actions">
+        <a class="btn-primary" href="https://t.me/Aliar4ik" target="_blank" data-i18n="btn_manager">Написати менеджеру в Telegram</a>
+      </div>
+    </section>
+    <section class="container" data-view="soft">
+        <h2 data-i18n="soft_title">Софт</h2>
+        <p class="lead" data-i18n="soft_lead">Оберіть програму, яку бажаєте використати:</p>
+
+        <div class="soft-program" data-product="voiceover">
+            <h3>Озвучка Відео (Video Voiceover)</h3>
+            <p class="muted">Генерація високоякісної озвучки для ваших відео на YouTube.</p>
+        </div>
+
+        <div class="soft-program" data-product="image_gen">
+            <h3>Генератор Зображень (Image Generator)</h3>
+            <p class="muted">Створення унікальних обкладинок та ілюстрацій на основі тексту.</p>
+        </div>
+
+        <div class="soft-program" data-product="subtitles">
+            <h3>Генератор Субтитрів (Subtitles Generator)</h3>
+            <p class="muted">Автоматична генерація та синхронізація субтитрів.</p>
+        </div>
+
+    </section>
+    <section class="container" data-view="updates">
+      <h2 data-i18n="updates_title">Оновлення</h2>
+      <div id="updatesList">
+        </div>
+    </section>
+    <section class="container" data-view="account">
+      <h2 data-i18n="account_title">Вхід в акаунт</h2>
+      <div class="admin-card">
+        <p class="muted" id="authStatusText" data-i18n="auth_status_default">Будь ласка, увійдіть.</p>
+        
+        <form id="authForm" data-mode="login">
+          <input type="email" id="authEmail" placeholder="Електронна пошта" required />
+          <input type="password" id="authPassword" placeholder="Пароль" required />
+          <input type="password" id="authConfirmPassword" placeholder="Підтвердіть пароль" style="display:none;" />
+          
+          <div class="remember-me" id="rememberMeContainer">
+            <input type="checkbox" id="rememberMe">
+            <label for="rememberMe" data-i18n="remember_me">Запам'ятати мене</label>
+          </div>
+
+          <button class="btn" type="submit" id="authSubmitBtn" data-i18n="login_btn">Увійти</button>
+          
+          <div class="form-switcher">
+            <a id="switchFormLink" data-i18n="switch_to_register">Зареєструватися</a>
+          </div>
+        </form>
+        
+        <div id="userDashboard" style="display:none; margin-top:20px;">
+            <h3 data-i18n="user_dashboard_title">Ваш акаунт</h3>
+            <p data-i18n="user_dashboard_info" class="muted">Тут ви зможете керувати своїми підписками та бачити їх статус.</p>
+            
+            <a class="btn-primary" href="#/pricing" style="width:100%; box-sizing:border-box; text-align:center; margin-bottom:15px;" data-i18n="btn_buy_subscription">Купити/Поновити підписку</a>
+
+            <button id="logoutButtonUser" class="btn-ghost" style="margin-top: 0;" data-i18n="logout_btn">Вийти з акаунту</button>
+        </div>
+
+        <div id="adminDashboard" style="display:none; margin-top:20px;">
+          <h3 data-i18n="publish_title">Адмін-панель: Опублікувати оновлення</h3>
+          <form id="publishForm">
+            <input type="text" id="postTitle" placeholder="Заголовок" required data-i18n="title_placeholder"/>
+            <input type="url" id="mediaUrl" placeholder="Посилання на зображення або YouTube-відео (необов'язково)" data-i18n="media_url_placeholder"/>
+            <textarea id="postContent" placeholder="Вміст публікації" rows="6" required data-i18n="content_placeholder"></textarea>
+            <button class="btn" type="submit" data-i18n="publish_btn">Опублікувати</button>
+          </form>
+          <button id="logoutButtonAdmin" class="btn-primary" style="margin-top: 15px;" data-i18n="logout_btn">Вийти з акаунту</button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer><div class="container" style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><span>© 2025 Softis</span></div></footer>
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.44.2/+esm';
+    
+    // =========================================================================
+    // !!! КРИТИЧНО: ПЕРСОНАЛІЗАЦІЯ !!!
+    // =========================================================================
+    const SUPABASE_URL = 'https://zobpfysopstuvvpdtgob.supabase.co'; // <--- ЗАМІНІТЬ НА ВАШ URL
+    const SUPABASE_ANON_KEY = 'sb_publishable_RCeM7shKEQQEc3LTyNzxBw_O86XFIQi'; // <--- ЗАМІНІТЬ НА ВАШ АКТУАЛЬНИЙ ANON KEY
+    
+    // !!! КОНСТАНТА ADMIN_EMAIL ВИДАЛЕНА !!!
+    // =========================================================================
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    const routes=['home','pricing','soft','updates','account']; 
+    const navLinks=document.querySelectorAll('.mainnav .nav-pill');
+    
+    // --- СЛОВНИК ПЕРЕКЛАДІВ ---
+    const translations = {
+        // ... (переклади залишаються без змін) ...
+        en: {
+            nav_home: 'Home', nav_pricing: 'Pricing', nav_soft: 'Soft', nav_updates: 'Updates', nav_account: 'Login/Account',
+            hero_title: 'We are your content creation assistant for YouTube.',
+            hero_lead: 'This software helps you create voiceovers, generate images, and create subtitles. Just pleasant parallax and neon glow.',
+            btn_try: 'Try for Free', btn_examples: 'View Examples', modal_subtitle: 'Your choice will be saved.',
+            pricing_title: 'Pricing and Access to Soft',
+            pricing_lead: 'To purchase access (crypto or other) and receive consultation, please contact our manager on Telegram. Access to the Soft will be activated manually after payment.',
+            btn_manager: 'Contact Manager on Telegram',
+            
+            user_dashboard_title: 'Your Account',
+            user_dashboard_info: 'Here you can manage your subscriptions and see their status.',
+            btn_buy_subscription: 'Buy/Renew Subscription',
+            
+            account_title: 'Login to Account',
+            auth_status_default: 'Please log in or register.',
+            auth_status_logged_in: (email) => `You are logged in as ${email}`,
+            login_btn: 'Log In',
+            register_btn: 'Register', 
+            switch_to_register: 'Register an account', 
+            switch_to_login: 'Log In to account', 
+            
+            remember_me: 'Remember me', 
+            logout_btn: 'Log Out', 
+            publish_title: 'Admin Panel: Publish New Update',
+            publish_btn: 'Publish',
+            title_placeholder: 'Title',
+            media_url_placeholder: 'Image or YouTube URL (optional)',
+            content_placeholder: 'Post content',
+
+            soft_title: 'Soft',
+            soft_lead: 'Select the program you wish to use:', 
+            alert_login_required: 'Please log in or register to use the Soft.',
+            alert_product_required: (product) => `You do not have an active subscription for ${product}. Payment is required for access.`, 
+            
+            updates_title: 'Updates', updates_loading: 'Loading updates...', updates_error: 'Error loading updates', updates_none: 'No updates available yet.', published_on: 'Published', publish_error: 'Publication error', publish_success: 'Post successfully added!', go_to_updates: 'Go to updates', generic_error: 'An error occurred.',
+            
+            register_success: 'Registration successful! Please check your email to confirm your account.',
+            passwords_mismatch: 'Passwords do not match.',
+            login_error: 'Login error',
+            register_error: 'Registration error'
+        },
+        // Українська мова
+        uk: {
+            nav_home: 'Головна', nav_pricing: 'Ціни', nav_soft: 'Софт', nav_updates: 'Оновлення', nav_account: 'Вхід в акаунт',
+            hero_title: 'Ми ваш помічник в створенні контенту для YouTube.',
+            hero_lead: 'Це софт, який допомагає вам створювати озвучку, генерувати зображення та створювати субтитри. Лише приємний паралакс і неонове світіння.',
+            btn_try: 'Спробувати безкоштовно', btn_examples: 'Дивитися приклади', modal_subtitle: 'Ваш вибір буде збережено.',
+            pricing_title: 'Ціни та доступ до Софту',
+            pricing_lead: 'Для придбання доступу (криптовалютою або іншим способом) та отримання консультації, будь ласка, зв\'яжіться з нашим менеджером у Telegram. Доступ до Софту буде активовано вручну після оплати.',
+            btn_manager: 'Написати менеджеру в Telegram',
+            
+            user_dashboard_title: 'Ваш акаунт',
+            user_dashboard_info: 'Тут ви зможете керувати своїми підписками та бачити їх статус.',
+            btn_buy_subscription: 'Купити/Поновити підписку',
+            
+            account_title: 'Вхід в акаунт',
+            auth_status_default: 'Будь ласка, увійдіть або зареєструйтесь.',
+            auth_status_logged_in: (email) => `Ви увійшли як ${email}`,
+            login_btn: 'Увійти',
+            register_btn: 'Зареєструватися', 
+            switch_to_register: 'Зареєструвати акаунт', 
+            switch_to_login: 'Увійти в акаунт', 
+            
+            remember_me: 'Запам\'ятати мене', 
+            logout_btn: 'Вийти з акаунту', 
+            publish_title: 'Адмін-панель: Опублікувати оновлення',
+            publish_btn: 'Опублікувати',
+            title_placeholder: 'Заголовок',
+            media_url_placeholder: 'Посилання на зображення або YouTube-відео (необов\'язково)',
+            content_placeholder: 'Вміст публікації',
+
+            soft_title: 'Софт',
+            soft_lead: 'Оберіть програму, яку бажаєте використати:', 
+            alert_login_required: 'Будь ласка, увійдіть або зареєструйтесь, щоб користуватися Софтом.',
+            alert_product_required: (product) => `У вас немає активної підписки на ${product}. Для доступу потрібна оплата.`, 
+            
+            updates_title: 'Оновлення', updates_loading: 'Завантаження оновлень...', updates_error: 'Помилка завантаження оновлень', updates_none: 'Наразі немає оновлень.', published_on: 'Опубліковано', publish_error: 'Помилка публікації', publish_success: 'Публікацію успішно додано!', go_to_updates: 'Перейти до оновлень', generic_error: 'Виникла помилка.',
+            
+            register_success: 'Реєстрація успішна! Будь ласка, перевірте свою пошту для підтвердження акаунту.',
+            passwords_mismatch: 'Паролі не збігаються.',
+            login_error: 'Помилка входу',
+            register_error: 'Помилка реєстрації'
+        }
+    };
+
+    function getEmbedUrl(url) {
+        if (!url) return null;
+        let match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([\w-]+)/);
+        if (match && match[1]) {
+            return `https://www.youtube.com/embed/${match[1]}`;
+        }
+        if (url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+            return url; 
+        }
+        return url;
+    }
+    
+    // --- ПЕРЕВІРКА ПІДПИСКИ НА КОНКРЕТНИЙ ПРОДУКТ ---
+    async function checkProductAccess(userId, productKey) {
+        if (!userId || !productKey) return false;
+        const now = new Date().toISOString();
+        const { data, error } = await supabase
+            .from('subscriptions')
+            .select('active_until')
+            .eq('user_id', userId)
+            .eq('product_key', productKey) 
+            .gte('active_until', now) 
+            .maybeSingle(); 
+
+        if (error && error.code !== 'PGRST116') {
+            console.error('Product access check error:', error.message);
+            return false;
+        }
+        return !!data; 
+    }
+    
+    // =========================================================================
+    // НОВА/ОНОВЛЕНА ФУНКЦІЯ: ПЕРЕВІРКА РОЛІ АДМІНІСТРАТОРА ЧЕРЕЗ БД
+    // =========================================================================
+    /**
+     * Перевіряє, чи має користувач роль 'admin' у таблиці user_roles.
+     * @param {string} userId - UUID користувача.
+     * @returns {Promise<boolean>} - true, якщо користувач є адміном.
+     */
+    async function isAdmin(userId) {
+        if (!userId) return false;
+
+        const { data, error } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', userId)
+            .eq('role', 'admin') 
+            .maybeSingle();
+
+        if (error && error.code !== 'PGRST116') {
+            console.error('Помилка при перевірці ролі адміністратора:', error.message);
+            return false;
+        }
+        return !!data;
+    }
+    // =========================================================================
+    
+    // --- ФУНКЦІЯ ПЕРЕКЛАДУ (I18N) ---
+    function setLanguage(langCode) {
+        const currentLang = translations[langCode];
+        if (!currentLang) return; 
+    
+        document.querySelectorAll('[data-i18n]').forEach(element => {
+            const key = element.getAttribute('data-i18n');
+            const translatedText = currentLang[key];
+            
+            if (translatedText) {
+                if (element.tagName === 'INPUT' && element.hasAttribute('placeholder')) {
+                    element.placeholder = translatedText;
+                } else if (element.tagName === 'TEXTAREA' && element.hasAttribute('placeholder')) {
+                    element.placeholder = translatedText;
+                } else if (typeof translatedText === 'function') {
+                    if (key === 'auth_status_logged_in') {
+                        supabase.auth.getSession().then(({ data: { session } }) => {
+                            if (session) {
+                                element.innerText = translatedText(session.user.email);
+                            }
+                        });
+                    }
+                } else {
+                    element.innerText = translatedText;
+                }
+            }
+        });
+        
+        localStorage.setItem('userLang', langCode);
+        document.documentElement.lang = langCode; 
+        
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            handleAuthStatus(session, langCode);
+        });
+    }
+
+    // --- ЗАВАНТАЖЕННЯ ОНОВЛЕНЬ ---
+    async function fetchUpdates() {
+      // ... (логіка fetchUpdates залишається без змін) ...
+      const updatesList = document.getElementById('updatesList');
+      const lang = translations[localStorage.getItem('userLang') || 'uk'];
+      
+      updatesList.innerHTML = `<p class="muted">${lang.updates_loading}</p>`;
+      
+      let posts = [];
+      
+      try {
+        const { data, error } = await supabase
+          .from('articles') 
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          updatesList.innerHTML = `<p class="muted">${lang.updates_error}: ${error.message}</p>`;
+          console.error('Error fetching updates:', error);
+          return;
+        }
+        
+        posts = data; 
+        
+      } catch (e) {
+        updatesList.innerHTML = `<p class="muted">${lang.generic_error}. Перевірте, чи створена таблиця "articles".</p>`;
+        console.error('Catch block error:', e);
+        return; 
+      }
+      
+      if (posts.length === 0) {
+        updatesList.innerHTML = `<p class="muted">${lang.updates_none}</p>`;
+        return;
+      }
+
+      updatesList.innerHTML = posts.map(post => {
+        let mediaHtml = '';
+        if (post.media_url) {
+          const embedUrl = getEmbedUrl(post.media_url);
+          if (embedUrl && embedUrl.includes('youtube.com/embed')) {
+            mediaHtml = `<div class="update-media"><iframe src="${embedUrl}" allowfullscreen title="Відео оновлення"></iframe></div>`;
+          } else if (embedUrl) {
+            mediaHtml = `<div class="update-media"><img src="${embedUrl}" alt="Зображення оновлення" loading="lazy"></div>`;
+          }
+        }
+
+        return `
+          <div class="update-post">
+            <h3>${post.title}</h3>
+            ${mediaHtml}
+            <p>${post.content}</p>
+            <p class="muted"><small>${lang.published_on}: ${new Date(post.created_at).toLocaleDateString()}</small></p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- ОБРОБКА СТАНУ АУТЕНТИФІКАЦІЇ ТА АДМІН-ДОСТУПУ (ОНОВЛЕНО) ---
+    async function handleAuthStatus(session, currentLangCode) {
+      const authStatusText = document.getElementById('authStatusText');
+      const authForm = document.getElementById('authForm');
+      const adminDashboard = document.getElementById('adminDashboard');
+      const userDashboard = document.getElementById('userDashboard');
+      const lang = translations[currentLangCode || localStorage.getItem('userLang') || 'uk'];
+      const loggedInMessage = lang.auth_status_logged_in;
+
+      if (authForm) authForm.style.display = 'none';
+      if (adminDashboard) adminDashboard.style.display = 'none';
+      if (userDashboard) userDashboard.style.display = 'none';
+
+      if (session) {
+        const userEmail = session.user.email;
+        authStatusText.textContent = loggedInMessage(userEmail);
+        
+        // КЛЮЧОВИЙ МОМЕНТ: ПЕРЕВІРКА ЧЕРЕЗ БАЗУ ДАНИХ (isAdmin)
+        const isUserAdmin = await isAdmin(session.user.id); 
+
+        if (isUserAdmin) {
+            // АДМІН
+            if (adminDashboard) adminDashboard.style.display = 'block';
+        } else {
+            // ЗВИЧАЙНИЙ КОРИСТУВАЧ
+            if (userDashboard) userDashboard.style.display = 'block';
+        }
+      } else {
+        // ВИЙШОВ
+        authStatusText.textContent = lang.auth_status_default;
+        if (authForm) {
+            authForm.style.display = 'block';
+            setFormMode('login');
+        }
+      }
+    }
+    
+    // --- ПЕРЕМИКАННЯ ФОРМИ ВХІД/РЕЄСТРАЦІЯ ---
+    function setFormMode(mode) {
+        const authSubmitBtn = document.getElementById('authSubmitBtn');
+        const authConfirmPassword = document.getElementById('authConfirmPassword');
+        const switchFormLink = document.getElementById('switchFormLink');
+        const rememberMeContainer = document.getElementById('rememberMeContainer');
+        const lang = translations[localStorage.getItem('userLang') || 'uk'];
+        
+        if (mode === 'register') {
+            authSubmitBtn.textContent = lang.register_btn;
+            authSubmitBtn.setAttribute('data-i18n', 'register_btn');
+            authConfirmPassword.style.display = 'block';
+            authConfirmPassword.required = true;
+            switchFormLink.textContent = lang.switch_to_login;
+            switchFormLink.setAttribute('data-i18n', 'switch_to_login');
+            authForm.setAttribute('data-mode', 'register');
+            rememberMeContainer.style.display = 'none';
+        } else { // 'login'
+            authSubmitBtn.textContent = lang.login_btn;
+            authSubmitBtn.setAttribute('data-i18n', 'login_btn');
+            authConfirmPassword.style.display = 'none';
+            authConfirmPassword.required = false;
+            switchFormLink.textContent = lang.switch_to_register;
+            switchFormLink.setAttribute('data-i18n', 'switch_to_register');
+            authForm.setAttribute('data-mode', 'login');
+            rememberMeContainer.style.display = 'flex'; 
+        }
+    }
+
+    let initialAuthCheckDone = false; 
+
+    supabase.auth.onAuthStateChange((event, session) => {
+      const currentLang = localStorage.getItem('userLang') || 'uk';
+      const rememberMeChecked = localStorage.getItem('rememberMeChecked') === 'true';
+
+      if (!initialAuthCheckDone && session && !rememberMeChecked) {
+          console.log("Session found, but 'Remember Me' not checked. Signing out.");
+          supabase.auth.signOut().then(() => {
+              handleAuthStatus(null, currentLang);
+              render();
+          }).catch(console.error);
+          initialAuthCheckDone = true; 
+          return; 
+      }
+      
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || !initialAuthCheckDone) {
+          handleAuthStatus(session, currentLang);
+          render();
+          initialAuthCheckDone = true;
+      }
+    });
+    
+    // --- ОБРОБКА ФОРМИ (ВХІД ТА РЕЄСТРАЦІЯ) ---
+    const authForm = document.getElementById('authForm');
+    const authStatusText = document.getElementById('authStatusText');
+    const switchFormLink = document.getElementById('switchFormLink');
+
+    if (authForm) {
+      switchFormLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          const currentMode = authForm.getAttribute('data-mode');
+          setFormMode(currentMode === 'login' ? 'register' : 'login');
+          authStatusText.textContent = translations[localStorage.getItem('userLang') || 'uk'].auth_status_default;
+      });
+
+      authForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const mode = authForm.getAttribute('data-mode');
+        const email = document.getElementById('authEmail').value;
+        const password = document.getElementById('authPassword').value;
+        const confirmPassword = document.getElementById('authConfirmPassword').value;
+        const rememberMe = document.getElementById('rememberMe').checked; 
+        const lang = translations[localStorage.getItem('userLang') || 'uk'];
+
+        if (mode === 'register') {
+            if (password !== confirmPassword) {
+                authStatusText.textContent = lang.passwords_mismatch;
+                return;
+            }
+
+            const { error } = await supabase.auth.signUp({ email, password });
+
+            if (error) {
+                console.error(`Помилка реєстрації: ${error.message}`);
+                authStatusText.textContent = `${lang.register_error}: ${error.message}`;
+            } else {
+                authStatusText.textContent = lang.register_success;
+                setFormMode('login'); 
+            }
+
+        } else {
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                console.error(`Помилка входу: ${error.message}`);
+                authStatusText.textContent = `${lang.login_error}: ${error.message}`;
+            } else {
+                if (rememberMe) {
+                    localStorage.setItem('rememberMeChecked', 'true');
+                    localStorage.setItem('rememberedUserEmail', email);
+                } else {
+                    localStorage.removeItem('rememberMeChecked'); 
+                    localStorage.removeItem('rememberedUserEmail');
+                }
+            }
+        }
+      });
+    }
+
+    // --- ЛОГІКА ВИХОДУ ---
+    function handleLogout() {
+        supabase.auth.signOut().then(({ error }) => {
+            localStorage.removeItem('rememberMeChecked'); 
+            localStorage.removeItem('rememberedUserEmail');
+            if (error) {
+                console.error('Помилка виходу:', error);
+            }
+            window.location.hash = '#/account';
+        });
+    }
+
+    document.getElementById('logoutButtonAdmin')?.addEventListener('click', handleLogout);
+    document.getElementById('logoutButtonUser')?.addEventListener('click', handleLogout);
+
+    // --- ЛОГІКА ПУБЛІКАЦІЇ (АДМІН) ---
+    const publishForm = document.getElementById('publishForm');
+    if (publishForm) {
+      publishForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const lang = translations[localStorage.getItem('userLang') || 'uk'];
+        const title = document.getElementById('postTitle').value;
+        const content = document.getElementById('postContent').value;
+        const mediaUrl = document.getElementById('mediaUrl').value;
+        
+        try {
+          const { data, error } = await supabase 
+            .from('articles')
+            .insert([{ title: title, content: content, media_url: mediaUrl || null }]);
+
+          if (error) {
+            console.error('Помилка публікації:', error);
+            document.getElementById('authStatusText').textContent = `${lang.publish_error}: ${error.message}`;
+          } else {
+            document.getElementById('authStatusText').innerHTML = `${lang.publish_success} <a href="#/updates" style="text-decoration:underline;color:var(--accent);font-weight:700;">${lang.go_to_updates}</a>`;
+            document.getElementById('postTitle').value = '';
+            document.getElementById('postContent').value = '';
+            document.getElementById('mediaUrl').value = '';
+            
+            fetchUpdates();
+          }
+        } catch (e) {
+          console.error('Catch block error:', e);
+          document.getElementById('authStatusText').textContent = lang.generic_error;
+        }
+      });
+    }
+
+    // --- ЛОГІКА МАРШРУТИЗАЦІЇ (SPA) ТА SOFT-ДОСТУПУ (ОНОВЛЕНО) ---
+    function parseRoute(){const h=location.hash.replace(/^#/,''); const seg=h.startsWith('/')?h.slice(1):h; const view=seg.split('/')[0]||'home'; return routes.includes(view)?view:'home'}
+    
+    async function handleSoftProgramClick(productKey, productName) {
+        const lang = translations[localStorage.getItem('userLang') || 'uk'];
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+            alert(lang.alert_login_required);
+            window.location.hash = '#/account';
+            return;
+        }
+        
+        // КЛЮЧОВИЙ МОМЕНТ: ПЕРЕВІРКА АДМІН-СТАТУСУ ЧЕРЕЗ БД
+        const isUserAdmin = await isAdmin(session.user.id);
+        
+        if (isUserAdmin) {
+            alert(`Доступ до програми "${productName}" дозволено (як адміністратору)! Тут буде інтерфейс програми.`);
+            return;
+        }
+
+        const hasAccess = await checkProductAccess(session.user.id, productKey);
+        
+        if (!hasAccess) {
+            alert(lang.alert_product_required(productName));
+            window.location.hash = '#/pricing'; 
+            return;
+        }
+
+        alert(`Доступ до програми "${productName}" дозволено! Тут буде інтерфейс програми.`);
+    }
+
+    async function render(){
+        const view = parseRoute(); 
+        
+        document.body.setAttribute('data-view', view); 
+        navLinks.forEach(a => a.setAttribute('aria-current', a.dataset.route === view ? 'page' : 'false')); 
+        window.scrollTo({ top: 0, behavior: 'auto' });
+
+        if (view === 'updates') {
+             fetchUpdates();
+        } else if (view === 'soft') {
+            document.querySelectorAll('.soft-program').forEach(el => {
+                const productKey = el.dataset.product;
+                const productName = el.querySelector('h3').textContent.trim();
+                
+                el.removeEventListener('click', el.clickListener); 
+
+                el.clickListener = () => handleSoftProgramClick(productKey, productName);
+                el.addEventListener('click', el.clickListener);
+            });
+        }
+    }
+    
+    addEventListener('hashchange',render); 
+    
+    // --- ЛОГІКА МОДАЛЬНОГО ВІКНА ТА ІНІЦІАЛІЗАЦІЇ ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('language-modal');
+        const savedLang = localStorage.getItem('userLang');
+
+        const rememberedEmail = localStorage.getItem('rememberedUserEmail');
+        const rememberMeChecked = localStorage.getItem('rememberMeChecked') === 'true';
+        if (document.getElementById('authEmail') && rememberedEmail) {
+            document.getElementById('authEmail').value = rememberedEmail;
+        }
+        if (document.getElementById('rememberMe')) {
+            document.getElementById('rememberMe').checked = rememberMeChecked;
+        }
+
+        if (savedLang) {
+            setLanguage(savedLang);
+            modal.setAttribute('data-active', 'false');
+        } else {
+            setLanguage('uk');
+            modal.setAttribute('data-active', 'true');
+        }
+
+        modal.querySelectorAll('.lang-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const lang = e.currentTarget.getAttribute('data-lang');
+                setLanguage(lang); 
+                modal.setAttribute('data-active', 'false'); 
+                render(); 
+            });
+        });
+        
+        render();
+    });
+
+    // Логіка анімації (залишено без змін)
+    const scene=document.querySelector('.abs-scene'), bg=document.querySelector('.bg-tris'), tris=[...document.querySelectorAll('.abs')]; let mouseX=0, mouseY=0, t=0;
+    function onMouseMove(e){ if(!scene) return; const r=scene.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height; mouseX=(x-.5)*2; mouseY=(y-.5)*2 }
+    addEventListener('mousemove', onMouseMove, {passive:true});
+    function loop(){ t+=.006; if(bg){ bg.style.transform=`translate3d(${mouseX*-14}px,${mouseY*-10}px,0)` } for(const el of tris){ const d=parseFloat(el.dataset.depth||'1'); const rx=-mouseY*22*d, ry=mouseX*28*d, rz=Math.sin(t*(.6+d))*6, tz=d*80; const pulse=1+(.06*(.5+Math.sin(t*3)*.5)); el.style.transform=`translateZ(${tz}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${pulse})` } requestAnimationFrame(loop) }
+    requestAnimationFrame(loop);
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches){ removeEventListener('mousemove', onMouseMove); tris.forEach(el=>{el.style.transform='none'}) }
+  </script>
+</body>
+</html>
